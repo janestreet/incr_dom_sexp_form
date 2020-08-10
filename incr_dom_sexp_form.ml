@@ -318,8 +318,7 @@ module Primitives = struct
               (parse_state : Parse_state.t)]
     in
     text_internal ~parse_state_to_interactive_initial_value (fun x ->
-      Or_error.try_with (fun () -> text_to_sexp x)
-      |> Result.map_error ~f:override_error)
+      Or_error.try_with (fun () -> text_to_sexp x) |> Result.map_error ~f:override_error)
   ;;
 
   let from_ppx_sexp_raw t_of_sexp =
@@ -407,9 +406,7 @@ module Primitives = struct
 
   let positive_int =
     validate ~where:`After int ~f:(fun x ->
-      if x <= 0
-      then Or_error.error_string "This integer should be positive."
-      else Ok ())
+      if x <= 0 then Or_error.error_string "This integer should be positive." else Ok ())
   ;;
 
   let non_negative_int =
@@ -526,9 +523,7 @@ module Primitives = struct
   ;;
 
   let enumeration ?don't_state_options_in_error elts ~to_string =
-    let cases =
-      List.map elts ~f:(fun x -> case_raw ~name:(to_string x) ~constructor:x)
-    in
+    let cases = List.map elts ~f:(fun x -> case_raw ~name:(to_string x) ~constructor:x) in
     variant ?don't_state_options_in_error cases
   ;;
 
@@ -604,15 +599,7 @@ module Primitives = struct
           Some list
       ;;
 
-      let add_at_button
-            ?attrs
-            state
-            ~list
-            ~deletion_stack
-            ~index
-            ~add_text
-            ~t
-            ~init_blank
+      let add_at_button ?attrs state ~list ~deletion_stack ~index ~add_text ~t ~init_blank
         =
         let new_values () =
           let new_form, new_deletion_stack =
@@ -915,8 +902,7 @@ module Primitives = struct
       let parse_state =
         Parse_state.transform_first_sexp parse_state ~f:(fun sexp ->
           let enumerated_match =
-            List.find options ~f:(fun (_, option) ->
-              Sexp.equal sexp (sexp_of_t option))
+            List.find options ~f:(fun (_, option) -> Sexp.equal sexp (sexp_of_t option))
           in
           let open Sexp in
           match enumerated_match with
@@ -1155,9 +1141,7 @@ let%test_module _ =
     let%expect_test "the [dropdown_with_other] primitive is correct" =
       let open Int in
       let values = [ 1; 2; 3; 4; 1234 ] in
-      let form =
-        dropdown_with_other ~other:int ~sexp_of_t [ "one", 1; "3", 2; "4", 2 ]
-      in
+      let form = dropdown_with_other ~other:int ~sexp_of_t [ "one", 1; "3", 2; "4", 2 ] in
       test_list ~form ~values ~sexp_of_t ~equal
     ;;
   end)
