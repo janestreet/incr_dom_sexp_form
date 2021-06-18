@@ -1,5 +1,5 @@
 open Import
-open Core_kernel
+open Core
 open Vdom
 module Interactive = Incr_dom_interactive
 
@@ -98,21 +98,21 @@ module Init = struct
 
   let node_after ~value t =
     match t with
-    | Simple -> Node.span [] []
+    | Simple -> Node.span []
     | With_default { default; sexp_of_t; between; diff } ->
       let diff_node =
         match value with
         | Error _ ->
           Node.span
-            [ error_attr ]
+            ~attr:error_attr
             [ Node.text "Can't display diff because there's an error in the form." ]
         | Ok t ->
           let original = sexp_of_t default in
           let updated = sexp_of_t t in
           diff ~original ~updated
       in
-      let between_node = Option.value between ~default:(Node.div [] []) in
-      Node.div [ Attr.style Css_gen.(text_align `Center) ] [ between_node; diff_node ]
+      let between_node = Option.value between ~default:(Node.div []) in
+      Node.div ~attr:(Attr.style Css_gen.(text_align `Center)) [ between_node; diff_node ]
   ;;
 end
 
@@ -174,7 +174,7 @@ let handle_error_interactive where interactive =
       | Error _ | Ok (Ok _) -> nodes
       | Ok (Error err) ->
         let error_message_node = Node.text (Error.to_string_hum err) in
-        let error_node = Node.span [ error_attr ] [ error_message_node ] in
+        let error_node = Node.span ~attr:error_attr [ error_message_node ] in
         let space_node = Node.text " " in
         (match where with
          | `Before -> error_node :: space_node :: nodes
@@ -380,7 +380,7 @@ module Primitives = struct
 
   let newline_nodes parse_state =
     let spaces = String.make (Parse_state.indentation parse_state) ' ' in
-    [ Node.div [] []; Node.text spaces ]
+    [ Node.div []; Node.text spaces ]
   ;;
 
   let newline : unit t =
@@ -682,7 +682,7 @@ module Primitives = struct
                 and () =
                   nodes
                     [ Node.span
-                        [ editor_message_attr ]
+                        ~attr:editor_message_attr
                         [ Node.text (" " ^ allow_deletion_text) ]
                     ]
                 in
@@ -864,7 +864,7 @@ module Primitives = struct
     let open Interactive.Let_syntax in
     let form =
       let%bind_open checked = checkbox ~init:initially_checked ()
-      and () = nodes [ Node.span [ editor_message_attr ] [ Node.text " Collapse " ] ] in
+      and () = nodes [ Node.span ~attr:editor_message_attr [ Node.text " Collapse " ] ] in
       let%map_open value =
         if checked
         then
@@ -872,7 +872,7 @@ module Primitives = struct
             match value with
             | Error _ ->
               [ Node.span
-                  [ error_attr ]
+                  ~attr:error_attr
                   [ Node.text "There is an error in the collapsed form." ]
               ]
             | Ok _ -> [])
