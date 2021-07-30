@@ -122,7 +122,7 @@ let to_interactive ~init t =
   let { Init_result.form; parse_state } = t parse_state in
   let () = Parse_state.require_empty parse_state in
   Interactive.map_nodes_value_dependent form ~f:(fun value nodes ->
-    [ Node.create "pre" [] nodes; Init.node_after ~value init ])
+    [ Node.pre nodes; Init.node_after ~value init ])
 ;;
 
 module T = struct
@@ -539,7 +539,7 @@ module Primitives = struct
       -> 'a t
       -> 'a list t
   end = struct
-    let add_text ?element_name ~order =
+    let add_text ?element_name ~order () =
       let order_text =
         match order with
         | `Ordered -> [ "here" ]
@@ -640,7 +640,7 @@ module Primitives = struct
           ~order
           t
       =
-      let add_text = add_text ?element_name ~order in
+      let add_text = add_text ?element_name ~order () in
       let remove_text = remove_text element_name in
       let allow_deletion_text = allow_deletion_text element_name in
       let open Interactive.Let_syntax in
