@@ -329,11 +329,10 @@ module Primitives = struct
 
   let from_ppx_sexp ~t_of_sexp ?(on_error = Fn.id) () =
     let text_to_sexp text =
-      if
-        not
-          (String.contains text '('
-           || String.contains text ')'
-           || String.contains text '"')
+      if not
+           (String.contains text '('
+            || String.contains text ')'
+            || String.contains text '"')
       then Sexp.Atom text
       else Sexp.of_string text
     in
