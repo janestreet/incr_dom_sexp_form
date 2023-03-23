@@ -104,7 +104,7 @@ module Init = struct
         match value with
         | Error _ ->
           Node.span
-            ~attr:error_attr
+            ~attrs:[ error_attr ]
             [ Node.text "Can't display diff because there's an error in the form." ]
         | Ok t ->
           let original = sexp_of_t default in
@@ -112,7 +112,9 @@ module Init = struct
           diff ~original ~updated
       in
       let between_node = Option.value between ~default:(Node.div []) in
-      Node.div ~attr:(Attr.style Css_gen.(text_align `Center)) [ between_node; diff_node ]
+      Node.div
+        ~attrs:[ Attr.style Css_gen.(text_align `Center) ]
+        [ between_node; diff_node ]
   ;;
 end
 
@@ -174,7 +176,7 @@ let handle_error_interactive where interactive =
       | Error _ | Ok (Ok _) -> nodes
       | Ok (Error err) ->
         let error_message_node = Node.text (Error.to_string_hum err) in
-        let error_node = Node.span ~attr:error_attr [ error_message_node ] in
+        let error_node = Node.span ~attrs:[ error_attr ] [ error_message_node ] in
         let space_node = Node.text " " in
         (match where with
          | `Before -> error_node :: space_node :: nodes
@@ -476,9 +478,7 @@ module Primitives = struct
                   | None -> parse_state
                 in
                 let parse_state =
-                  if has_been_applied
-                  then Parse_state.indent parse_state
-                  else parse_state
+                  if has_been_applied then Parse_state.indent parse_state else parse_state
                 in
                 let enclose = if has_been_applied then `Enclose else `Don't_enclose in
                 let inner = if has_been_applied then space *> inner else inner in
@@ -681,7 +681,7 @@ module Primitives = struct
                 and () =
                   nodes
                     [ Node.span
-                        ~attr:editor_message_attr
+                        ~attrs:[ editor_message_attr ]
                         [ Node.text (" " ^ allow_deletion_text) ]
                     ]
                 in
@@ -701,12 +701,7 @@ module Primitives = struct
             List.mapi list ~f:(fun index form ->
               let button_with_new_list f ~sep =
                 let%map_open new_list =
-                  f
-                    ?attrs:add_and_remove_button_attrs
-                    state
-                    ~list
-                    ~deletion_stack
-                    ~index
+                  f ?attrs:add_and_remove_button_attrs state ~list ~deletion_stack ~index
                 and () = sep in
                 new_list
               in
@@ -863,7 +858,9 @@ module Primitives = struct
     let open Interactive.Let_syntax in
     let form =
       let%bind_open checked = checkbox ~init:initially_checked ()
-      and () = nodes [ Node.span ~attr:editor_message_attr [ Node.text " Collapse " ] ] in
+      and () =
+        nodes [ Node.span ~attrs:[ editor_message_attr ] [ Node.text " Collapse " ] ]
+      in
       let%map_open value =
         if checked
         then
@@ -871,7 +868,7 @@ module Primitives = struct
             match value with
             | Error _ ->
               [ Node.span
-                  ~attr:error_attr
+                  ~attrs:[ error_attr ]
                   [ Node.text "There is an error in the collapsed form." ]
               ]
             | Ok _ -> [])
