@@ -386,11 +386,11 @@ module Primitives = struct
 
   let newline : unit t =
     fun parse_state ->
-      let form =
-        Interactive.Primitives.nodes (newline_nodes parse_state)
-        |> Interactive.map ~f:(fun x -> Ok x)
-      in
-      Init_result.Fields.create ~parse_state ~form
+    let form =
+      Interactive.Primitives.nodes (newline_nodes parse_state)
+      |> Interactive.map ~f:(fun x -> Ok x)
+    in
+    Init_result.Fields.create ~parse_state ~form
   ;;
 
   let on_new_line t = newline *> t
