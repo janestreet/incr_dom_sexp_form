@@ -14,7 +14,7 @@ module Parse_state = struct
     { indentation : int
     ; default : Sexp.t list option
     }
-  [@@deriving fields, sexp]
+  [@@deriving fields ~getters ~iterators:create, sexp]
 
   let create ~default () = { indentation = 0; default }
   let indent t = { t with indentation = t.indentation + 1 }
@@ -54,7 +54,7 @@ module Init_result = struct
     { parse_state : Parse_state.t
     ; form : 'a Or_error.t Interactive.t
     }
-  [@@deriving fields]
+  [@@deriving fields ~getters ~iterators:create]
 end
 
 type 'a t = Parse_state.t -> 'a Init_result.t
@@ -219,7 +219,7 @@ module Case = struct
     ; has_been_applied : bool
     ; inner : 'a sexp_form
     }
-  [@@deriving fields]
+  [@@deriving fields ~getters ~iterators:create]
 
   let apply t sexp_form =
     let { name; has_been_applied; inner } = t in
@@ -429,7 +429,7 @@ module Primitives = struct
       ; left : Sexp.t list
       ; right : Sexp.t list
       }
-    [@@deriving fields]
+    [@@deriving fields ~getters ~iterators:create]
   end
 
   let find_matching cases parse_state =
@@ -564,7 +564,6 @@ module Primitives = struct
         { list_var : 'a list Incr.Var.t
         ; deletion_stack_var : 'a list Incr.Var.t
         }
-      [@@deriving fields]
 
       let create ~initial_list =
         let list_var = Incr.Var.create initial_list in
@@ -1110,7 +1109,7 @@ let%test_module _ =
         ; b : string option [@sexp.option]
         ; c : t option
         }
-      [@@deriving fields, sexp_of, compare]
+      [@@deriving fields ~fields ~iterators:create, sexp_of, compare]
 
       let equal = [%compare.equal: t]
     end
