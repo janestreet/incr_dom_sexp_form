@@ -129,33 +129,33 @@ let to_interactive ~init t =
 
 module T = struct
   include Applicative.Make (struct
-      type nonrec 'a t = 'a t
+    type nonrec 'a t = 'a t
 
-      let return x parse_state =
-        let form = x |> Or_error.return |> Interactive.return in
-        Init_result.Fields.create ~parse_state ~form
-      ;;
+    let return x parse_state =
+      let form = x |> Or_error.return |> Interactive.return in
+      Init_result.Fields.create ~parse_state ~form
+    ;;
 
-      let map t ~f parse_state =
-        let { Init_result.parse_state; form } = t parse_state in
-        let form = Interactive.map form ~f:(fun x -> Or_error.map x ~f) in
-        Init_result.Fields.create ~parse_state ~form
-      ;;
+    let map t ~f parse_state =
+      let { Init_result.parse_state; form } = t parse_state in
+      let form = Interactive.map form ~f:(fun x -> Or_error.map x ~f) in
+      Init_result.Fields.create ~parse_state ~form
+    ;;
 
-      let map = `Custom map
+    let map = `Custom map
 
-      let apply t1 t2 parse_state =
-        let open Interactive.Let_syntax in
-        let { Init_result.parse_state; form = form1 } = t1 parse_state in
-        let { Init_result.parse_state; form = form2 } = t2 parse_state in
-        let form =
-          let%map a1 = form1
-          and a2 = form2 in
-          Or_error.map2 a1 a2 ~f:Fn.id
-        in
-        Init_result.Fields.create ~parse_state ~form
-      ;;
-    end)
+    let apply t1 t2 parse_state =
+      let open Interactive.Let_syntax in
+      let { Init_result.parse_state; form = form1 } = t1 parse_state in
+      let { Init_result.parse_state; form = form2 } = t2 parse_state in
+      let form =
+        let%map a1 = form1
+        and a2 = form2 in
+        Or_error.map2 a1 a2 ~f:Fn.id
+      in
+      Init_result.Fields.create ~parse_state ~form
+    ;;
+  end)
 end
 
 include T
@@ -198,13 +198,13 @@ let validate ~where t ~f =
 let validate_interactive ~where t interactive ~f =
   let open Interactive.Let_syntax in
   (fun parse_state ->
-     let { Init_result.parse_state; form } = t parse_state in
-     let form =
-       let%map a = form
-       and b = interactive in
-       Or_error.map a ~f:(fun a -> Or_error.map (f a b) ~f:(fun () -> a))
-     in
-     Init_result.Fields.create ~parse_state ~form)
+    let { Init_result.parse_state; form } = t parse_state in
+    let form =
+      let%map a = form
+      and b = interactive in
+      Or_error.map a ~f:(fun a -> Or_error.map (f a b) ~f:(fun () -> a))
+    in
+    Init_result.Fields.create ~parse_state ~form)
   |> handle_error ~where
 ;;
 
@@ -213,7 +213,7 @@ module Case = struct
 
   type 'a t =
     { name : string
-    (* [has_been_applied] is used to determine whether the value should be wrapped in
+        (* [has_been_applied] is used to determine whether the value should be wrapped in
        parentheses when converted to a sexp. For instance, [A] is converted as [A] but
        [B of int] is converted as [(B 123)]. *)
     ; has_been_applied : bool
@@ -261,23 +261,23 @@ module Primitives = struct
 
   let text_internal ?placeholder ?width ~parse_state_to_interactive_initial_value parse =
     (fun parse_state ->
-       let initial_value, parse_state =
-         parse_state_to_interactive_initial_value parse_state
-       in
-       let form =
-         let open Interactive.Let_syntax in
-         let placeholder_attr = Option.map placeholder ~f:(fun x -> Attr.placeholder x) in
-         let width_attr =
-           Option.map width ~f:(fun width -> Attr.create "size" (Int.to_string width))
-         in
-         let attrs =
-           List.filter_opt [ width_attr; placeholder_attr ]
-           @ Interactive.Primitives.default_text_attrs
-         in
-         let%map_open user_text = text ~attrs ?init:initial_value () in
-         Ok (parse user_text)
-       in
-       Init_result.Fields.create ~parse_state ~form)
+      let initial_value, parse_state =
+        parse_state_to_interactive_initial_value parse_state
+      in
+      let form =
+        let open Interactive.Let_syntax in
+        let placeholder_attr = Option.map placeholder ~f:(fun x -> Attr.placeholder x) in
+        let width_attr =
+          Option.map width ~f:(fun width -> Attr.create "size" (Int.to_string width))
+        in
+        let attrs =
+          List.filter_opt [ width_attr; placeholder_attr ]
+          @ Interactive.Primitives.default_text_attrs
+        in
+        let%map_open user_text = text ~attrs ?init:initial_value () in
+        Ok (parse user_text)
+      in
+      Init_result.Fields.create ~parse_state ~form)
     |> handle_error ~where:`After
   ;;
 
@@ -340,7 +340,7 @@ module Primitives = struct
     in
     sexp ~override_error:on_error () ~text_to_sexp
     |> map ~f:(fun s ->
-      Or_error.try_with (fun () -> t_of_sexp s) |> Result.map_error ~f:on_error)
+         Or_error.try_with (fun () -> t_of_sexp s) |> Result.map_error ~f:on_error)
     |> handle_error ~where:`After
   ;;
 
@@ -463,62 +463,62 @@ module Primitives = struct
       |> Interactive.map ~f:fst
     in
     (fun parse_state ->
-       let match_ = find_matching cases parse_state in
-       let cases_as_editors =
-         List.mapi cases ~f:(fun index case ->
-           let { Case.name; inner; has_been_applied } = case in
-           let form_and_enclose =
-             lazy
-               (let parse_state =
-                  match match_ with
-                  | Some match_ ->
-                    if index = Match.index match_
-                    then Parse_state.with_default parse_state (Match.left match_)
-                    else Parse_state.erase_default parse_state
-                  | None -> parse_state
-                in
-                let parse_state =
-                  if has_been_applied then Parse_state.indent parse_state else parse_state
-                in
-                let enclose = if has_been_applied then `Enclose else `Don't_enclose in
-                let inner = if has_been_applied then space *> inner else inner in
-                let { Init_result.parse_state; form } = inner parse_state in
-                let () = Parse_state.require_empty parse_state in
-                Ok (form, enclose))
-           in
-           name, form_and_enclose)
-       in
-       let parse_state =
-         match match_ with
-         | None -> parse_state
-         | Some match_ -> Parse_state.with_default parse_state (Match.right match_)
-       in
-       let default_index =
-         match match_ with
-         | None -> 0
-         | Some match_ -> Match.index match_ + 1
-       in
-       let error_message =
-         match don't_state_options_in_error with
-         | Some () -> "Please select an option."
-         | None ->
-           let options = List.map cases ~f:Case.name |> String.concat ~sep:" | " in
-           "Please select an option: " ^ options ^ "."
-       in
-       let first_option = lazy (Or_error.error_string error_message) in
-       let options = ("", first_option) :: cases_as_editors in
-       let open Interactive.Let_syntax in
-       let form =
-         let%bind_open choice = dropdown_exn ~init:default_index ~options ~attrs:[] () in
-         match Lazy.force choice with
-         | Error err -> return (Ok (Error err), `Don't_enclose)
-         | Ok (form, enclose) ->
-           (match%map form with
-            | Error err -> Error err, enclose
-            | Ok value -> Ok (Ok value), enclose)
-       in
-       let form = maybe_enclose form in
-       Init_result.Fields.create ~parse_state ~form)
+      let match_ = find_matching cases parse_state in
+      let cases_as_editors =
+        List.mapi cases ~f:(fun index case ->
+          let { Case.name; inner; has_been_applied } = case in
+          let form_and_enclose =
+            lazy
+              (let parse_state =
+                 match match_ with
+                 | Some match_ ->
+                   if index = Match.index match_
+                   then Parse_state.with_default parse_state (Match.left match_)
+                   else Parse_state.erase_default parse_state
+                 | None -> parse_state
+               in
+               let parse_state =
+                 if has_been_applied then Parse_state.indent parse_state else parse_state
+               in
+               let enclose = if has_been_applied then `Enclose else `Don't_enclose in
+               let inner = if has_been_applied then space *> inner else inner in
+               let { Init_result.parse_state; form } = inner parse_state in
+               let () = Parse_state.require_empty parse_state in
+               Ok (form, enclose))
+          in
+          name, form_and_enclose)
+      in
+      let parse_state =
+        match match_ with
+        | None -> parse_state
+        | Some match_ -> Parse_state.with_default parse_state (Match.right match_)
+      in
+      let default_index =
+        match match_ with
+        | None -> 0
+        | Some match_ -> Match.index match_ + 1
+      in
+      let error_message =
+        match don't_state_options_in_error with
+        | Some () -> "Please select an option."
+        | None ->
+          let options = List.map cases ~f:Case.name |> String.concat ~sep:" | " in
+          "Please select an option: " ^ options ^ "."
+      in
+      let first_option = lazy (Or_error.error_string error_message) in
+      let options = ("", first_option) :: cases_as_editors in
+      let open Interactive.Let_syntax in
+      let form =
+        let%bind_open choice = dropdown_exn ~init:default_index ~options ~attrs:[] () in
+        match Lazy.force choice with
+        | Error err -> return (Ok (Error err), `Don't_enclose)
+        | Ok (form, enclose) ->
+          (match%map form with
+           | Error err -> Error err, enclose
+           | Ok value -> Ok (Ok value), enclose)
+      in
+      let form = maybe_enclose form in
+      Init_result.Fields.create ~parse_state ~form)
     |> handle_error ~where:`After
   ;;
 
@@ -583,10 +583,10 @@ module Primitives = struct
       ;;
 
       let state_modifying_button
-            ?(attrs = default_modifying_button_attr)
-            state
-            ~new_values
-            ~descr
+        ?(attrs = default_modifying_button_attr)
+        state
+        ~new_values
+        ~descr
         =
         let open Interactive.Let_syntax in
         match%map_open button ~text:descr ~attrs () with
@@ -630,13 +630,13 @@ module Primitives = struct
     end
 
     let list
-          ?element_name
-          ?gated_deletion
-          ?max_size
-          ?add_and_remove_button_attrs
-          ?(editor_message_attr = default_editor_message_attr)
-          ~order
-          t
+      ?element_name
+      ?gated_deletion
+      ?max_size
+      ?add_and_remove_button_attrs
+      ?(editor_message_attr = default_editor_message_attr)
+      ~order
+      t
       =
       let add_text = add_text ?element_name ~order () in
       let remove_text = remove_text element_name in
@@ -926,17 +926,17 @@ end
 
 let map_that_can_fail t ~a_to_b ~b_to_a ~sexp_of_a ~b_of_sexp =
   (fun parse_state ->
-     let parse_state =
-       Parse_state.transform_first_sexp parse_state ~f:(fun sexp ->
-         sexp |> b_of_sexp |> b_to_a |> sexp_of_a)
-     in
-     let { Init_result.form; parse_state } = t parse_state in
-     let form =
-       Interactive.map
-         form
-         ~f:(Or_error.map ~f:(fun x -> Or_error.try_with (fun () -> a_to_b x)))
-     in
-     { Init_result.form; parse_state })
+    let parse_state =
+      Parse_state.transform_first_sexp parse_state ~f:(fun sexp ->
+        sexp |> b_of_sexp |> b_to_a |> sexp_of_a)
+    in
+    let { Init_result.form; parse_state } = t parse_state in
+    let form =
+      Interactive.map
+        form
+        ~f:(Or_error.map ~f:(fun x -> Or_error.try_with (fun () -> a_to_b x)))
+    in
+    { Init_result.form; parse_state })
   |> handle_error ~where:`Before
   |> handle_error ~where:`Before
 ;;

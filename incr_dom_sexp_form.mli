@@ -292,7 +292,7 @@ module Primitives : sig
     -> 'a list
     -> to_string:('a -> string)
     -> (* You can use [ppx_variants] for this. *)
-    'a t
+       'a t
 
   (** For recursive data types.
       Note: [recursive Fn.id] will go into an infinite loop when you call [to_interactive]
