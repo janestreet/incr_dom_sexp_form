@@ -11,6 +11,7 @@ build: [
 ]
 depends: [
   "ocaml" {>= "5.1.0"}
+  "core"
   "incr_dom"
   "incr_dom_interactive"
   "incr_map"

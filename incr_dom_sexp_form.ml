@@ -129,33 +129,33 @@ let to_interactive ~init t =
 
 module T = struct
   include Applicative.Make (struct
-    type nonrec 'a t = 'a t
+      type nonrec 'a t = 'a t
 
-    let return x parse_state =
-      let form = x |> Or_error.return |> Interactive.return in
-      Init_result.Fields.create ~parse_state ~form
-    ;;
+      let return x parse_state =
+        let form = x |> Or_error.return |> Interactive.return in
+        Init_result.Fields.create ~parse_state ~form
+      ;;
 
-    let map t ~f parse_state =
-      let { Init_result.parse_state; form } = t parse_state in
-      let form = Interactive.map form ~f:(fun x -> Or_error.map x ~f) in
-      Init_result.Fields.create ~parse_state ~form
-    ;;
+      let map t ~f parse_state =
+        let { Init_result.parse_state; form } = t parse_state in
+        let form = Interactive.map form ~f:(fun x -> Or_error.map x ~f) in
+        Init_result.Fields.create ~parse_state ~form
+      ;;
 
-    let map = `Custom map
+      let map = `Custom map
 
-    let apply t1 t2 parse_state =
-      let open Interactive.Let_syntax in
-      let { Init_result.parse_state; form = form1 } = t1 parse_state in
-      let { Init_result.parse_state; form = form2 } = t2 parse_state in
-      let form =
-        let%map a1 = form1
-        and a2 = form2 in
-        Or_error.map2 a1 a2 ~f:Fn.id
-      in
-      Init_result.Fields.create ~parse_state ~form
-    ;;
-  end)
+      let apply t1 t2 parse_state =
+        let open Interactive.Let_syntax in
+        let { Init_result.parse_state; form = form1 } = t1 parse_state in
+        let { Init_result.parse_state; form = form2 } = t2 parse_state in
+        let form =
+          let%map a1 = form1
+          and a2 = form2 in
+          Or_error.map2 a1 a2 ~f:Fn.id
+        in
+        Init_result.Fields.create ~parse_state ~form
+      ;;
+    end)
 end
 
 include T
@@ -340,7 +340,7 @@ module Primitives = struct
     in
     sexp ~override_error:on_error () ~text_to_sexp
     |> map ~f:(fun s ->
-         Or_error.try_with (fun () -> t_of_sexp s) |> Result.map_error ~f:on_error)
+      Or_error.try_with (fun () -> t_of_sexp s) |> Result.map_error ~f:on_error)
     |> handle_error ~where:`After
   ;;
 
