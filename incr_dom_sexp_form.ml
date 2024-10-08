@@ -980,165 +980,161 @@ let test_sequence ~form ~values ~sexp_of_t ~equal ~on_failure =
   Sequence.iter values ~f:(fun value -> test ~form ~value ~sexp_of_t ~equal ~on_failure)
 ;;
 
-let%test_module _ =
-  (module struct
-    let test = test ~on_failure:`Print
-    let test_list = test_list ~on_failure:`Print
-    let test_sequence = test_sequence ~on_failure:`Print
+module%test _ = struct
+  let test = test ~on_failure:`Print
+  let test_list = test_list ~on_failure:`Print
+  let test_sequence = test_sequence ~on_failure:`Print
 
-    module type M = sig
-      type t
+  module type M = sig
+    type t
 
-      val equal : t -> t -> bool
-      val sexp_of_t : t -> Sexp.t
-      val quickcheck_generator : t Quickcheck.Generator.t
-    end
+    val equal : t -> t -> bool
+    val sexp_of_t : t -> Sexp.t
+    val quickcheck_generator : t Quickcheck.Generator.t
+  end
 
-    let test_form_randomly (type a) (module M : M with type t = a) form =
-      let values =
-        Sequence.take (Quickcheck.random_sequence M.quickcheck_generator) 100
-      in
-      test_sequence ~form ~values ~sexp_of_t:M.sexp_of_t ~equal:M.equal
-    ;;
+  let test_form_randomly (type a) (module M : M with type t = a) form =
+    let values = Sequence.take (Quickcheck.random_sequence M.quickcheck_generator) 100 in
+    test_sequence ~form ~values ~sexp_of_t:M.sexp_of_t ~equal:M.equal
+  ;;
 
-    let%expect_test "the [string] primitive is correct" =
-      test_form_randomly (module String) (string ());
-      [%expect {| |}]
-    ;;
+  let%expect_test "the [string] primitive is correct" =
+    test_form_randomly (module String) (string ());
+    [%expect {| |}]
+  ;;
 
-    let%expect_test "the [int] primitive is correct" =
-      test_form_randomly (module Int) int;
-      [%expect {| |}]
-    ;;
+  let%expect_test "the [int] primitive is correct" =
+    test_form_randomly (module Int) int;
+    [%expect {| |}]
+  ;;
 
-    let%expect_test "the [from_ppx_sexp_raw] primitive is correct" =
-      let open Date in
-      test_form_randomly (module Date) (from_ppx_sexp_raw t_of_sexp);
-      [%expect {| |}];
-      let open String in
-      test_form_randomly (module String) (from_ppx_sexp_raw t_of_sexp);
-      [%expect {| |}];
-      let open Sexp in
-      test_form_randomly (module Sexp) (from_ppx_sexp_raw t_of_sexp);
-      [%expect {| |}]
-    ;;
+  let%expect_test "the [from_ppx_sexp_raw] primitive is correct" =
+    let open Date in
+    test_form_randomly (module Date) (from_ppx_sexp_raw t_of_sexp);
+    [%expect {| |}];
+    let open String in
+    test_form_randomly (module String) (from_ppx_sexp_raw t_of_sexp);
+    [%expect {| |}];
+    let open Sexp in
+    test_form_randomly (module Sexp) (from_ppx_sexp_raw t_of_sexp);
+    [%expect {| |}]
+  ;;
 
-    let%expect_test "the [from_ppx_sexp] primitive is correct" =
-      let open Date in
-      test_form_randomly (module Date) (from_ppx_sexp ~t_of_sexp ());
-      [%expect {| |}];
-      let open String in
-      let form = from_ppx_sexp ~t_of_sexp () in
-      test_form_randomly (module String) form;
-      test ~form ~value:"\\\\\\" ~sexp_of_t ~equal;
-      [%expect {| |}];
-      let open Sexp in
-      test_form_randomly (module Sexp) (from_ppx_sexp ~t_of_sexp ());
-      [%expect {| |}]
-    ;;
+  let%expect_test "the [from_ppx_sexp] primitive is correct" =
+    let open Date in
+    test_form_randomly (module Date) (from_ppx_sexp ~t_of_sexp ());
+    [%expect {| |}];
+    let open String in
+    let form = from_ppx_sexp ~t_of_sexp () in
+    test_form_randomly (module String) form;
+    test ~form ~value:"\\\\\\" ~sexp_of_t ~equal;
+    [%expect {| |}];
+    let open Sexp in
+    test_form_randomly (module Sexp) (from_ppx_sexp ~t_of_sexp ());
+    [%expect {| |}]
+  ;;
 
-    let%expect_test "the [bool] primitives are correct" =
-      test_form_randomly (module Bool) bool_true_false;
-      test_form_randomly (module Bool) bool_yes_no;
-      [%expect {| |}]
-    ;;
+  let%expect_test "the [bool] primitives are correct" =
+    test_form_randomly (module Bool) bool_true_false;
+    test_form_randomly (module Bool) bool_yes_no;
+    [%expect {| |}]
+  ;;
 
-    let%expect_test "the [tuple5] primitive is correct" =
-      let form = tuple5 int int (string ()) bool_true_false bool_yes_no in
-      let values = [ 1, 2, "foo", true, false; 12, 33, "bar", false, false ] in
+  let%expect_test "the [tuple5] primitive is correct" =
+    let form = tuple5 int int (string ()) bool_true_false bool_yes_no in
+    let values = [ 1, 2, "foo", true, false; 12, 33, "bar", false, false ] in
+    test_list
+      ~form
+      ~values
+      ~sexp_of_t:[%sexp_of: int * int * string * bool * bool]
+      ~equal:[%compare.equal: int * int * string * bool * bool];
+    [%expect {| |}]
+  ;;
+
+  let%expect_test "the [option] primitive is correct" =
+    let form = option int in
+    let values = [ None; Some 0; Some 42 ] in
+    test_list
+      ~form
+      ~values
+      ~sexp_of_t:[%sexp_of: int option]
+      ~equal:[%compare.equal: int option];
+    [%expect {| |}]
+  ;;
+
+  let%expect_test "the [list] primitive is correct" =
+    List.iter [ `Ordered; `Unordered ] ~f:(fun order ->
+      let form = list ~order int in
+      let values = [ []; [ 1 ]; [ 23; 44 ] ] in
       test_list
         ~form
         ~values
-        ~sexp_of_t:[%sexp_of: int * int * string * bool * bool]
-        ~equal:[%compare.equal: int * int * string * bool * bool];
-      [%expect {| |}]
-    ;;
+        ~sexp_of_t:[%sexp_of: int list]
+        ~equal:[%compare.equal: int list]);
+    [%expect {| |}]
+  ;;
 
-    let%expect_test "the [option] primitive is correct" =
-      let form = option int in
-      let values = [ None; Some 0; Some 42 ] in
-      test_list
-        ~form
-        ~values
-        ~sexp_of_t:[%sexp_of: int option]
-        ~equal:[%compare.equal: int option];
-      [%expect {| |}]
-    ;;
+  module Foo = struct
+    type t =
+      | A
+      | B of int
+      | C of int * t
+    [@@deriving variants, sexp_of, compare]
 
-    let%expect_test "the [list] primitive is correct" =
-      List.iter [ `Ordered; `Unordered ] ~f:(fun order ->
-        let form = list ~order int in
-        let values = [ []; [ 1 ]; [ 23; 44 ] ] in
-        test_list
-          ~form
-          ~values
-          ~sexp_of_t:[%sexp_of: int list]
-          ~equal:[%compare.equal: int list]);
-      [%expect {| |}]
-    ;;
+    let equal = [%compare.equal: t]
+  end
 
-    module Foo = struct
-      type t =
-        | A
-        | B of int
-        | C of int * t
-      [@@deriving variants, sexp_of, compare]
+  let%expect_test "the [variant] primitive is correct" =
+    let open Foo in
+    let form =
+      recursive (fun form ->
+        variant
+          (Variants.fold
+             ~init:[]
+             ~a:(fun acc a -> case a :: acc)
+             ~b:(fun acc b -> (case b <|*> int) :: acc)
+             ~c:(fun acc c -> (case c <|*> int <|*> form) :: acc)))
+    in
+    let values = [ A; B 12; C (42, A); C (17, B (-44)); C (0, C (1, C (123, A))) ] in
+    test_list ~form ~values ~sexp_of_t ~equal;
+    [%expect {| |}]
+  ;;
 
-      let equal = [%compare.equal: t]
-    end
+  module Bar = struct
+    type t =
+      { a : int
+      ; b : string option [@sexp.option]
+      ; c : t option
+      }
+    [@@deriving fields ~fields ~iterators:create, sexp_of, compare]
 
-    let%expect_test "the [variant] primitive is correct" =
-      let open Foo in
-      let form =
-        recursive (fun form ->
-          variant
-            (Variants.fold
-               ~init:[]
-               ~a:(fun acc a -> case a :: acc)
-               ~b:(fun acc b -> (case b <|*> int) :: acc)
-               ~c:(fun acc c -> (case c <|*> int <|*> form) :: acc)))
-      in
-      let values = [ A; B 12; C (42, A); C (17, B (-44)); C (0, C (1, C (123, A))) ] in
-      test_list ~form ~values ~sexp_of_t ~equal;
-      [%expect {| |}]
-    ;;
+    let equal = [%compare.equal: t]
+  end
 
-    module Bar = struct
-      type t =
-        { a : int
-        ; b : string option [@sexp.option]
-        ; c : t option
-        }
-      [@@deriving fields ~fields ~iterators:create, sexp_of, compare]
+  let%expect_test "the [record] primitive is correct" =
+    let open Bar in
+    let form =
+      recursive (fun form ->
+        record ~create:(fun a b c -> Fields.create ~a ~b ~c)
+        <.*> field int Fields.a
+        <.*> sexp_option_field (string ()) Fields.b
+        <.*> field (option form) Fields.c
+        |> finish_record)
+    in
+    let values =
+      [ { a = 1; b = None; c = None }
+      ; { a = 1; b = Some "foo"; c = None }
+      ; { a = 4; b = None; c = Some { a = 12; b = Some "baz"; c = None } }
+      ]
+    in
+    test_list ~form ~values ~sexp_of_t ~equal;
+    [%expect {| |}]
+  ;;
 
-      let equal = [%compare.equal: t]
-    end
-
-    let%expect_test "the [record] primitive is correct" =
-      let open Bar in
-      let form =
-        recursive (fun form ->
-          record ~create:(fun a b c -> Fields.create ~a ~b ~c)
-          <.*> field int Fields.a
-          <.*> sexp_option_field (string ()) Fields.b
-          <.*> field (option form) Fields.c
-          |> finish_record)
-      in
-      let values =
-        [ { a = 1; b = None; c = None }
-        ; { a = 1; b = Some "foo"; c = None }
-        ; { a = 4; b = None; c = Some { a = 12; b = Some "baz"; c = None } }
-        ]
-      in
-      test_list ~form ~values ~sexp_of_t ~equal;
-      [%expect {| |}]
-    ;;
-
-    let%expect_test "the [dropdown_with_other] primitive is correct" =
-      let open Int in
-      let values = [ 1; 2; 3; 4; 1234 ] in
-      let form = dropdown_with_other ~other:int ~sexp_of_t [ "one", 1; "3", 2; "4", 2 ] in
-      test_list ~form ~values ~sexp_of_t ~equal
-    ;;
-  end)
-;;
+  let%expect_test "the [dropdown_with_other] primitive is correct" =
+    let open Int in
+    let values = [ 1; 2; 3; 4; 1234 ] in
+    let form = dropdown_with_other ~other:int ~sexp_of_t [ "one", 1; "3", 2; "4", 2 ] in
+    test_list ~form ~values ~sexp_of_t ~equal
+  ;;
+end
