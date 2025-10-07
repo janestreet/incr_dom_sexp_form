@@ -2,40 +2,37 @@ open Core
 
 type 'a t
 
-(** This is a module for building forms that allow the user to edit complicated types
-    (for example, configs).
+(** This is a module for building forms that allow the user to edit complicated types (for
+    example, configs).
 
     ['a Sexp_form.t] gives you a form for editing values of type ['a].
 
-    It is called [Sexp_form] because it relies on the fact that ['a] can be represented
-    as a sexp. Specifically, it is capable of parsing the sexp representation of ['a]
-    to fill out the default values for the fields of the form automatically.
+    It is called [Sexp_form] because it relies on the fact that ['a] can be represented as
+    a sexp. Specifically, it is capable of parsing the sexp representation of ['a] to fill
+    out the default values for the fields of the form automatically.
 
-    This means that if you have a type ['a] which defines [sexp_of_a], you can
-    specify a default value of type ['a] when rendering the ['a Sexp_form.t].
+    This means that if you have a type ['a] which defines [sexp_of_a], you can specify a
+    default value of type ['a] when rendering the ['a Sexp_form.t].
 
     [Sexp_form] has other useful functionality beyond just parsing default values.
 
-    For example, [ list : 'a Sexp_form.t -> 'a list Sexp_form.t ] converts a form
-    for editing ['a] into a form for editing ['a list].
+    For example, [ list : 'a Sexp_form.t -> 'a list Sexp_form.t ] converts a form for
+    editing ['a] into a form for editing ['a list].
 
     This gives the user buttons to add and delete elements and remembers deleted elements
     so that the user can undo.
 
     Note: If you can't convert ['a] to a sexp, you can still construct a ['a Sexp_form.t].
-    You will just be unable to specify default values for the form.
-*)
+    You will just be unable to specify default values for the form. *)
 module Init : sig
   type 'a t
 
   val simple : 'a t
 
-  (** Used to display [default] as the initial value of your sexp_form.
-      Also displays [diff] for the user to understand how the values entered into
-      the form differ from the [default] value.
-      [between] is a node which will be displayed between the form and the diff.
-
-  *)
+  (** Used to display [default] as the initial value of your sexp_form. Also displays
+      [diff] for the user to understand how the values entered into the form differ from
+      the [default] value. [between] is a node which will be displayed between the form
+      and the diff. *)
   val with_default
     :  sexp_of_t:('a -> Sexp.t)
     -> default:'a
@@ -50,33 +47,29 @@ end
 
 val to_interactive : init:'a Init.t -> 'a t -> 'a Or_error.t Incr_dom_interactive.t
 
-(** A ['a Case.t] is implemented as a ['a Sexp_form.t].
-    When you create a case from a variant constructor for variant [Foo.t],
-    say a constructor for type [int * string], you get a
-    [(int -> string -> Foo.t) Case.t].
+(** A ['a Case.t] is implemented as a ['a Sexp_form.t]. When you create a case from a
+    variant constructor for variant [Foo.t], say a constructor for type [int * string],
+    you get a [(int -> string -> Foo.t) Case.t].
 
-    For more information, see the documentation for [variant].
-*)
+    For more information, see the documentation for [variant]. *)
 module Case : sig
   type 'a t
 
   val map : 'a t -> f:('a -> 'b) -> 'b t
 end
 
-(** [('record, 'a) Record_builder.t] is implemented as a ['a Sexp_form.t].
-    The ['record] only exists for additional type safety.
+(** [('record, 'a) Record_builder.t] is implemented as a ['a Sexp_form.t]. The ['record]
+    only exists for additional type safety.
 
-    For more information, see the documentation for [record].
-*)
+    For more information, see the documentation for [record]. *)
 module Record_builder : sig
   type ('record, 'a) t
 end
 
-(** [('record, 'a) Record_field.t] is implemented as a ['a Sexp_form.t].
-    The ['record] only exists for additional type safety.
+(** [('record, 'a) Record_field.t] is implemented as a ['a Sexp_form.t]. The ['record]
+    only exists for additional type safety.
 
-    For more information, see the documentation for [record].
-*)
+    For more information, see the documentation for [record]. *)
 module Record_field : sig
   type ('record, 'a) t
 end
@@ -102,8 +95,7 @@ module Primitives : sig
 
       [order] indicates whether the order of the list elements is important. If it's not
       important, we only need one add button; if it's important, we need an add button
-      between every pair of elements.
-  *)
+      between every pair of elements. *)
   val list
     :  ?element_name:string
     -> ?gated_deletion:unit
@@ -169,10 +161,10 @@ module Primitives : sig
           let module Fields = Foo.Fields in
           record ~create:(fun a b -> Fields.create ~a ~b)
           <.*> field (string ()) Fields.a
-          <.*> field int         Fields.b
+          <.*> field int Fields.b
           |> finish_record
-      ]}
-  *)
+        ;;
+      ]} *)
   val record : create:('a -> 'b) -> ('record, 'a -> 'b) Record_builder.t
 
   (** See documentation for [record]. *)
@@ -193,20 +185,20 @@ module Primitives : sig
   (** See documentation for [record]. *)
   val finish_record : ('record, 'record) Record_builder.t -> 'record t
 
-  (** This has some special behaviour, namely that if the input string contains
-      no parentheses or quotes then we will treat it as an atom -- so the user can enter
+  (** This has some special behaviour, namely that if the input string contains no
+      parentheses or quotes then we will treat it as an atom -- so the user can enter
       [foo bar] when a direct conversion using [Sexp.of_string] followed by [t_of_sexp]
       would only accept ["foo bar"]. It can also override any error produced by ppx_sexp
       using [on_error], since the errors produced by ppx_sexp are not always easy for the
-      user to understand.
-  *)
+      user to understand. *)
   val from_ppx_sexp
     :  t_of_sexp:(Sexp.t -> 'a)
     -> ?on_error:(Error.t -> Error.t)
     -> unit
     -> 'a t
 
-  (** [variant] takes a list of [Case.t]s. [Case.t]s are created by [case] and [case_raw].
+  (** {v
+ [variant] takes a list of [Case.t]s. [Case.t]s are created by [case] and [case_raw].
       When you create a case from a variant constructor for variant ['v],
       say a case with arguments of types ['a1], ..., ['an], you get a
       [('a1 -> ... -> 'an -> 'v) Case.t].
@@ -237,7 +229,7 @@ module Primitives : sig
       By default, the error message lists all the possible variants, as in
       "Please select an option: Foo | Bar". If there are a lot of variants
       and you don't want this, you can use [don't_state_options_in_error].
-  *)
+      v} *)
   val variant : ?don't_state_options_in_error:unit -> 'a Case.t list -> 'a t
 
   (** Mainly useful for polymorphic variants. For example, the following produces a
@@ -245,8 +237,7 @@ module Primitives : sig
 
       {[
         case_raw ~name:"Foo" ~constructor:(fun x -> `Foo x) <|*> positive_int
-      ]}
-  *)
+      ]} *)
   val case_raw : name:string -> constructor:'a -> 'a Case.t
 
   (** See documentation for [variant]. *)
@@ -255,16 +246,17 @@ module Primitives : sig
   (** See documentation for [variant]. *)
   val ( <|*> ) : ('a -> 'b) Case.t -> 'a t -> 'b Case.t
 
-  (** Allows the user to choose from a list of ['a]s, which are displayed using
-      the provided names in the dropdown, or enter their own choice by selecting
-      "Other" in the dropdown. *)
+  (** Allows the user to choose from a list of ['a]s, which are displayed using the
+      provided names in the dropdown, or enter their own choice by selecting "Other" in
+      the dropdown. *)
   val dropdown_with_other
     :  other:'a t
     -> sexp_of_t:('a -> Sexp.t)
     -> (string * 'a) list
     -> 'a t
 
-  (** This function is a wrapper around [variant] and [case_raw].
+  (** {v
+ This function is a wrapper around [variant] and [case_raw].
       It's useful with [ppx_enumerate]:
 
       {[
@@ -286,7 +278,7 @@ module Primitives : sig
       By default, the error message lists all the possible variants, as in
       "Please select an option: Foo | Bar". If there are a lot of variants
       and you don't want this, you can use [don't_state_options_in_error].
-  *)
+      v} *)
   val enumeration
     :  ?don't_state_options_in_error:unit
     -> 'a list
@@ -294,9 +286,8 @@ module Primitives : sig
     -> (* You can use [ppx_variants] for this. *)
        'a t
 
-  (** For recursive data types.
-      Note: [recursive Fn.id] will go into an infinite loop when you call [to_interactive]
-      on it.
+  (** For recursive data types. Note: [recursive Fn.id] will go into an infinite loop when
+      you call [to_interactive] on it.
 
       Here's an example of proper usage:
       {[
@@ -306,23 +297,22 @@ module Primitives : sig
             | Cons of int * t
           [@@deriving variants]
         end
+
         let my_list_editor : MyList.t Sexp_form.t =
           let open Sexp_form.Primitives in
           recursive (fun my_list_editor ->
             variant
               (MyList.Variants.fold
                  ~init:[]
-                 ~nil: (fun acc nil   ->  case nil                                :: acc)
+                 ~nil:(fun acc nil -> case nil :: acc)
                  ~cons:(fun acc const -> (case cons <|*> int <|*> my_list_editor) :: acc)))
-      ]}
-  *)
+        ;;
+      ]} *)
   val recursive : ('a t -> 'a t) -> 'a t
 
   (** This is useful for e.g. specifying default values when the user creates a new
       element in a list. If you want a default value for the whole form, consider using
-      [Init.with_default], which also shows the user a diff summarizing their
-      edits.
-  *)
+      [Init.with_default], which also shows the user a diff summarizing their edits. *)
   val defaulting_to : default:'a -> sexp_of_t:('a -> Sexp.t) -> 'a t -> 'a t
 
   (** These only affect formatting, not functionality. *)
@@ -345,8 +335,7 @@ end
 
     Since we parse default values as sexps, this entails some conversion back and forth.
 
-    If [a_to_b] throws, this function will catch it and display the error to the user.
-*)
+    If [a_to_b] throws, this function will catch it and display the error to the user. *)
 val map
   :  'a t
   -> a_to_b:('a -> 'b)
@@ -357,8 +346,7 @@ val map
 
 (** If this returns an error, the error will be displayed before the form element.
 
-    If [a_to_b] throws, this function will catch it and display the error to the user.
-*)
+    If [a_to_b] throws, this function will catch it and display the error to the user. *)
 val map_that_can_fail
   :  'a t
   -> a_to_b:('a -> 'b Or_error.t)
@@ -371,8 +359,7 @@ val map_that_can_fail
     from 'a to 'b, 'a and 'b have the same sexp representation.
 
     If they don't, then it could fail at runtime when we try to parse the default value
-    for the form.
-*)
+    for the form. *)
 module Unsafe : sig
   include Applicative.S with type 'a t := 'a t
 
@@ -391,17 +378,15 @@ end
 
 (** Validates the value in the form, displaying the provided error if it is invalid.
     [where] indicates whether the error should be displayed before or after the form
-    element.
-    It's recommended to use `After for errors which are right next to the area where
-    the user inputs the data, and `Before for errors in complicated types which
+    element. It's recommended to use `After for errors which are right next to the area
+    where the user inputs the data, and `Before for errors in complicated types which
     comprise many input fields. *)
 val validate : where:[ `Before | `After ] -> 'a t -> f:('a -> unit Or_error.t) -> 'a t
 
 (** Same as [validate], but more suited for validating properties which depend on
     external, changing state.
 
-    Note that an [Incr] can be converted to an [Interactive] using [Interactive.of_incr].
-*)
+    Note that an [Incr] can be converted to an [Interactive] using [Interactive.of_incr]. *)
 val validate_interactive
   :  where:[ `Before | `After ]
   -> 'a t
@@ -412,12 +397,10 @@ val validate_interactive
 (** [handle_error] displays the error, if there is one. If there is no error, it does
     nothing.
 
-    [validate] is a wrapper around [handle_error].
-*)
+    [validate] is a wrapper around [handle_error]. *)
 val handle_error : where:[ `Before | `After ] -> 'a Or_error.t t -> 'a t
 
-(** Verifies that the provided [form] can parse [value].
-    Intended for expect tests. *)
+(** Verifies that the provided [form] can parse [value]. Intended for expect tests. *)
 val test
   :  form:'a t
   -> value:'a
