@@ -4,8 +4,8 @@ open Vdom
 module Interactive = Incr_dom_interactive
 
 (* Roughly speaking, a ['a Sexp_form.t] is a function from a default value to a
-   ['a Or_error Interactive.t]. The default value is represented as a list of sexps.
-   An indentation is passed to each [Sexp_form.t] in addition to the default value. *)
+   ['a Or_error Interactive.t]. The default value is represented as a list of sexps. An
+   indentation is passed to each [Sexp_form.t] in addition to the default value. *)
 
 module Parse_state = struct
   (* Technically indentation isn't related to parsing, but it's included in [Parse_state]
@@ -214,8 +214,8 @@ module Case = struct
   type 'a t =
     { name : string
         (* [has_been_applied] is used to determine whether the value should be wrapped in
-       parentheses when converted to a sexp. For instance, [A] is converted as [A] but
-       [B of int] is converted as [(B 123)]. *)
+           parentheses when converted to a sexp. For instance, [A] is converted as [A] but
+           [B of int] is converted as [(B 123)]. *)
     ; has_been_applied : bool
     ; inner : 'a sexp_form
     }
@@ -692,9 +692,8 @@ module Primitives = struct
 
              For each form in [list], the corresponding form in [forms_with_buttons]
              contains the original form plus its associated add/remove buttons, and its
-             value consists of the original form's value along with any new list
-             produced by an associated button being pressed ([None] if no button was
-             pressed).
+             value consists of the original form's value along with any new list produced
+             by an associated button being pressed ([None] if no button was pressed).
           *)
           let forms_with_buttons =
             List.mapi list ~f:(fun index form ->
