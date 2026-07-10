@@ -608,7 +608,7 @@ module Primitives = struct
               let new_form = t init_blank |> Init_result.form in
               new_form, []
           in
-          let left, right = List.split_n list index in
+          let #(left, right) = List.split_n list index in
           left @ [ new_form ] @ right, new_deletion_stack
         in
         state_modifying_button ?attrs state ~new_values ~descr:add_text
@@ -616,7 +616,7 @@ module Primitives = struct
 
       let remove_at_button ?attrs state ~list ~deletion_stack ~index ~remove_text =
         let new_values () =
-          let left, right = List.split_n list index in
+          let #(left, right) = List.split_n list index in
           match right with
           | deleted :: rest -> left @ rest, deleted :: deletion_stack
           | [] -> failwith "internal error in sexp_editor"
